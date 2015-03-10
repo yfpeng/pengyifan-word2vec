@@ -19,9 +19,7 @@ public class Word2VecBinReaderTest {
       throws IOException {
     URL url = this.getClass().getResource("/tokensModel.bin");
     File file = new File(url.getFile());
-    Word2VecBinReader reader = new Word2VecBinReader(file);
-    Word2Vec model = reader.read();
-    reader.close();
+    Word2Vec model = Word2VecUtils.readFromBinFile(file);
 
     // test vocab
     assertTrue("Does not contain \"</s>\"", model.contains("</s>"));

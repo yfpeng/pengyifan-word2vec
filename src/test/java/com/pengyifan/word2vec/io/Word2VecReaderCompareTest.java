@@ -11,7 +11,6 @@ import java.util.StringJoiner;
 
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Precision;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.pengyifan.word2vec.Word2Vec;
@@ -25,15 +24,11 @@ public class Word2VecReaderCompareTest {
       throws IOException {
     URL url = this.getClass().getResource("/tokensModel.bin");
     File binFile = new File(url.getFile());
-    Word2VecBinReader binReader = new Word2VecBinReader(binFile);
-    Word2Vec binModel = binReader.read();
-    binReader.close();
+    Word2Vec binModel = Word2VecUtils.readFromBinFile(binFile);
 
     url = this.getClass().getResource("/tokensModel.txt");
     File txtFile = new File(url.getFile());
-    Word2VecTxtReader txtReader = new Word2VecTxtReader(txtFile);
-    Word2Vec txtModel = txtReader.read();
-    txtReader.close();
+    Word2Vec txtModel = Word2VecUtils.readFromTxtFile(txtFile);
 
     // test vocab
     for (String vocab : txtModel.getVocab()) {
@@ -51,20 +46,15 @@ public class Word2VecReaderCompareTest {
   }
 
   @Test
-  @Ignore
   public void test2()
       throws IOException {
     URL url = this.getClass().getResource("/tokensModel.bin");
     File binFile = new File(url.getFile());
-    Word2VecBinReader binReader = new Word2VecBinReader(binFile);
-    Word2Vec binModel = binReader.read();
-    binReader.close();
+    Word2Vec binModel = Word2VecUtils.readFromBinFile(binFile);
 
     url = this.getClass().getResource("/tokensModel.txt");
     File txtFile = new File(url.getFile());
-    Word2VecTxtReader txtReader = new Word2VecTxtReader(txtFile);
-    Word2Vec txtModel = txtReader.read();
-    txtReader.close();
+    Word2Vec txtModel = Word2VecUtils.readFromTxtFile(txtFile);
 
     RealVector txtVector = txtModel.getRealVector("</s>");
     RealVector binVector = binModel.getRealVector("</s>");
