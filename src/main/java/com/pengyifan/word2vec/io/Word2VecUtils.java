@@ -13,6 +13,7 @@ import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.text.DecimalFormat;
 import java.util.Map;
+import java.util.Set;
 import java.util.StringJoiner;
 
 import org.apache.commons.io.ByteOrderMark;
@@ -25,7 +26,7 @@ import com.google.common.collect.Maps;
 import com.pengyifan.word2vec.Word2Vec;
 
 public class Word2VecUtils {
-  
+
   private static final DecimalFormat format = new DecimalFormat("0.######");
 
   public static void writeToTxtFile(File file, Word2Vec word2vec)
@@ -36,11 +37,11 @@ public class Word2VecUtils {
         word2vec.getVocabSize(),
         word2vec.getLayer1Size()));
     writer.newLine();
-    for(String key: word2vec.getVocab()) {
+    for (String key : word2vec.getVocab()) {
       StringJoiner joiner = new StringJoiner(" ");
       joiner.add(key);
       RealVector vector = word2vec.getRealVector(key);
-      for(int i=0; i<vector.getDimension(); i++) {
+      for (int i = 0; i < vector.getDimension(); i++) {
         joiner.add(format.format(vector.getEntry(i)));
       }
       writer.write(joiner.toString());
@@ -49,12 +50,20 @@ public class Word2VecUtils {
     writer.close();
   }
 
+  /**
+   * Read word2vec from the bin file. The default byte order is LITTLE_ENDIAN.
+   * 
+   * @param file the bin file
+   * @return word2vec
+   * @throws IOException
+   */
   public static Word2Vec readFromBinFile(File file)
       throws IOException {
     return readFromBinFile(file, detectByteOrder(file));
   }
-  
-  private static ByteOrder detectByteOrder(File file) throws IOException {
+
+  private static ByteOrder detectByteOrder(File file)
+      throws IOException {
     FileInputStream fis = new FileInputStream(file);
     BOMInputStream bomIn = new BOMInputStream(fis,
         ByteOrderMark.UTF_16LE, ByteOrderMark.UTF_16BE
@@ -77,6 +86,87 @@ public class Word2VecUtils {
     return byteOrder;
   }
 
+  /**
+   * Read vectors when their associated words are in the vocabulary. The
+   * default byte order is LITTLE_ENDIAN.
+   * 
+   * @param file word2vec bin file
+   * @param vocab vocabulary
+   * @return word2vec
+   * @throws IOException
+   */
+  public static Word2Vec readFromBinFile(File file, Set<String> vocab)
+      throws IOException {
+    return readFromBinFile(file, detectByteOrder(file), vocab);
+  }
+
+  /**
+   * Read vectors when their associated words are in the vocabulary.
+   * 
+   * @param file word2vec bin file
+   * @param byteOrder byte order of the bin file
+   * @param vocab vocabulary
+   * @return word2vec
+   * @throws IOException
+   */
+  public static Word2Vec readFromBinFile(File file,
+      ByteOrder byteOrder,
+      Set<String> vocab)
+      throws IOException {
+    FileInputStream fis = new FileInputStream(file);
+    DataInput in = null;
+    if (byteOrder == ByteOrder.BIG_ENDIAN) {
+      in = new DataInputStream(fis);
+    } else {
+      in = new SwappedDataInputStream(fis);
+    }
+
+    StringBuilder sb = new StringBuilder();
+    char c = (char) in.readByte();
+    while (c != '\n') {
+      sb.append(c);
+      c = (char) in.readByte();
+    }
+    String firstLine = sb.toString();
+    int index = firstLine.indexOf(' ');
+    int vocabSize = Integer.parseInt(firstLine.substring(0, index));
+    int layer1Size = Integer.parseInt(firstLine.substring(index + 1));
+
+    Map<String, RealVector> map = Maps.newConcurrentMap();
+    for (int lineno = 0; lineno < vocabSize; lineno++) {
+      sb = new StringBuilder();
+      c = (char) in.readByte();
+      while (c != ' ') {
+        // ignore newlines in front of words (some binary files have newline,
+        // some don't)
+        if (c != '\n') {
+          sb.append(c);
+        }
+        c = (char) in.readByte();
+      }
+      String word = sb.toString();
+      double[] d = new double[layer1Size];
+      for (int i = 0; i < layer1Size; i++) {
+        float f = in.readFloat();
+        d[i] = f;
+      }
+      if (vocab.contains(word)) {
+        map.put(word, new ArrayRealVector(d));
+      }
+    }
+    fis.close();
+    vocabSize = map.size();
+    return new Word2Vec(vocabSize, layer1Size, map);
+  }
+
+  /**
+   * Read word2vec from the bin file.
+   * 
+   * @param file the bin file
+   * @param byteOrder byte order of the bin file
+   * @return word2vec
+   * @throws IOException
+   */
   public static Word2Vec readFromBinFile(File file, ByteOrder byteOrder)
       throws IOException {
     FileInputStream fis = new FileInputStream(file);
@@ -110,18 +200,25 @@ public class Word2VecUtils {
         }
         c = (char) in.readByte();
       }
-      String vocab = sb.toString();
+      String word = sb.toString();
       double[] d = new double[layer1Size];
       for (int i = 0; i < layer1Size; i++) {
         float f = in.readFloat();
         d[i] = f;
       }
-      map.put(vocab, new ArrayRealVector(d));
+      map.put(word, new ArrayRealVector(d));
     }
     fis.close();
     return new Word2Vec(vocabSize, layer1Size, map);
   }
 
+  /**
+   * Read word2vec from the text file.
+   * 
+   * @param file the text file
+   * @return word2vec
+   * @throws IOException
+   */
   public static Word2Vec readFromTxtFile(File file)
       throws IOException {
     LineNumberReader reader = new LineNumberReader(
@@ -142,11 +239,11 @@ public class Word2VecUtils {
       String vocab = tokens[0];
       checkArgument(
           layer1Size == tokens.length - 1,
-          "For file '%s', on line %s, layer size is %s, but found %s values in the word vector",
-          file,
-          reader.getLineNumber(),
-          layer1Size,
-          tokens.length - 1);
+            "For file '%s', on line %s, layer size is %s, but found %s values in the word vector",
+            file,
+            reader.getLineNumber(),
+            layer1Size,
+            tokens.length - 1);
       for (int i = 1; i < tokens.length; i++) {
         d[i - 1] = Double.parseDouble(tokens[i]);
       }

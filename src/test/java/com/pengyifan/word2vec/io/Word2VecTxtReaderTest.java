@@ -15,7 +15,7 @@ import com.pengyifan.word2vec.Word2Vec;
 public class Word2VecTxtReaderTest {
 
   @Test
-  public void test()
+  public void testReadFromTxtFile()
       throws IOException {
     URL url = this.getClass().getResource("/tokensModel.txt");
     File file = new File(url.getFile());

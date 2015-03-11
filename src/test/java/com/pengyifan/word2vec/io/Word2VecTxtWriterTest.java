@@ -25,7 +25,7 @@ public class Word2VecTxtWriterTest {
   public TemporaryFolder folder= new TemporaryFolder();
   
   @Test
-  public void test() throws IOException {
+  public void testWriteToTxtFile() throws IOException {
     URL url = this.getClass().getResource("/tokensModel.txt");
     File file = new File(url.getFile());
     Word2Vec expected = Word2VecUtils.readFromTxtFile(file);
