@@ -14,8 +14,11 @@ import java.nio.file.Files;
 import java.text.DecimalFormat;
 import java.util.Map;
 import java.util.Set;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.StringJoiner;
 
+import com.google.common.primitives.Bytes;
 import org.apache.commons.io.ByteOrderMark;
 import org.apache.commons.io.input.BOMInputStream;
 import org.apache.commons.io.input.SwappedDataInputStream;
@@ -121,30 +124,30 @@ public class Word2VecUtils {
       in = new SwappedDataInputStream(fis);
     }
 
-    StringBuilder sb = new StringBuilder();
-    char c = (char) in.readByte();
+    List<Byte> list = new ArrayList<Byte>();
+    byte c = in.readByte();
     while (c != '\n') {
-      sb.append(c);
-      c = (char) in.readByte();
+      list.add(c);
+      c = in.readByte();
     }
-    String firstLine = sb.toString();
+    String firstLine = new String(Bytes.toArray(list));
     int index = firstLine.indexOf(' ');
     int vocabSize = Integer.parseInt(firstLine.substring(0, index));
     int layer1Size = Integer.parseInt(firstLine.substring(index + 1));
 
     Map<String, RealVector> map = Maps.newConcurrentMap();
     for (int lineno = 0; lineno < vocabSize; lineno++) {
-      sb = new StringBuilder();
-      c = (char) in.readByte();
+      list.clear();
+      c = in.readByte();
       while (c != ' ') {
         // ignore newlines in front of words (some binary files have newline,
         // some don't)
         if (c != '\n') {
-          sb.append(c);
+          list.add(c);
         }
-        c = (char) in.readByte();
+        c = in.readByte();
       }
-      String word = sb.toString();
+      String word = new String(Bytes.toArray(list));
       double[] d = new double[layer1Size];
       for (int i = 0; i < layer1Size; i++) {
         float f = in.readFloat();
@@ -177,30 +180,30 @@ public class Word2VecUtils {
       in = new SwappedDataInputStream(fis);
     }
 
-    StringBuilder sb = new StringBuilder();
-    char c = (char) in.readByte();
+    List<Byte> list = new ArrayList<Byte>();
+    byte c = in.readByte();
     while (c != '\n') {
-      sb.append(c);
-      c = (char) in.readByte();
+      list.add(c);
+      c = in.readByte();
     }
-    String firstLine = sb.toString();
+    String firstLine = new String(Bytes.toArray(list));
     int index = firstLine.indexOf(' ');
     int vocabSize = Integer.parseInt(firstLine.substring(0, index));
     int layer1Size = Integer.parseInt(firstLine.substring(index + 1));
 
     Map<String, RealVector> map = Maps.newConcurrentMap();
     for (int lineno = 0; lineno < vocabSize; lineno++) {
-      sb = new StringBuilder();
-      c = (char) in.readByte();
+      list.clear();
+      c = in.readByte();
       while (c != ' ') {
         // ignore newlines in front of words (some binary files have newline,
         // some don't)
         if (c != '\n') {
-          sb.append(c);
+          list.add(c);
         }
-        c = (char) in.readByte();
+        c = in.readByte();
       }
-      String word = sb.toString();
+      String word = new String(Bytes.toArray(list));
       double[] d = new double[layer1Size];
       for (int i = 0; i < layer1Size; i++) {
         float f = in.readFloat();
